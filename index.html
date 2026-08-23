@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Discipline — Cutoff Budget</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0f0b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Discipline">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root{
+    --bg:#0d0f0b;
+    --surface:#171a12;
+    --surface-2:#1f2317;
+    --border:#2b2f21;
+    --text:#eef0e6;
+    --text-dim:#9a9c8a;
+    --text-faint:#6b6d5f;
+    --accent:#c9a227;
+    --accent-dim:#8a7220;
+    --success:#7a9a63;
+    --danger:#c1584f;
+    --radius:8px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px;}
+
+  /* HEADER */
+  header.top{padding:8px 4px 24px;border-bottom:1px solid var(--border);margin-bottom:20px;}
+  .brand{display:flex;align-items:baseline;justify-content:space-between;}
+  .brand h1{
+    font-family:var(--sans);
+    font-size:15px;
+    letter-spacing:0.32em;
+    font-weight:700;
+    margin:0;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  .cutoff-tag{font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+  .income-row{margin-top:14px;display:flex;align-items:baseline;gap:8px;}
+  .income-amt{font-family:var(--mono);font-size:38px;font-weight:600;letter-spacing:-0.02em;}
+  .income-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;}
+
+  /* SECTION LABEL */
+  .section-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.14em;
+    color:var(--text-faint);margin:28px 0 10px;font-weight:600;
+  }
+  .section-label:first-of-type{margin-top:0;}
+
+  /* ALLOCATION CARDS */
+  .alloc-list{display:flex;flex-direction:column;gap:10px;}
+  .alloc-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    transition:border-color .15s ease, opacity .15s ease;
+  }
+  .alloc-card.done{border-color:var(--success);}
+  .alloc-info{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  .alloc-name{font-size:14px;font-weight:600;color:var(--text);}
+  .alloc-sub{font-size:11px;color:var(--text-faint);}
+  .alloc-amt{font-family:var(--mono);font-size:16px;color:var(--text-dim);margin-top:2px;}
+  .alloc-card.done .alloc-amt{color:var(--success);}
+  .btn{
+    border:1px solid var(--border);background:var(--surface-2);color:var(--text);
+    font-family:var(--sans);font-size:13px;font-weight:600;
+    padding:12px 16px;border-radius:6px;min-height:44px;
+    cursor:pointer;white-space:nowrap;flex-shrink:0;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-mark{border-color:var(--accent-dim);color:var(--accent);}
+  .btn-mark:active{background:var(--accent-dim);color:#0d0f0b;}
+  .btn-done{border-color:var(--success);color:var(--success);background:transparent;}
+  .badge-cleared{
+    font-family:var(--mono);font-size:12px;color:var(--success);
+    border:1px solid var(--success);border-radius:6px;padding:10px 12px;
+  }
+
+  /* BIG STAT CARD */
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px 16px;
+  }
+  .stat-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .stat-title{font-size:13px;font-weight:600;color:var(--text-dim);}
+  .stat-note{font-size:11px;color:var(--text-faint);margin-top:2px;}
+  .stat-amt{font-family:var(--mono);font-size:34px;font-weight:600;margin:10px 0 4px;letter-spacing:-0.02em;}
+  .stat-amt.negative{color:var(--danger);}
+  .stat-of{font-size:12px;color:var(--text-faint);font-family:var(--mono);}
+  .over-budget{font-family:var(--mono);font-size:12px;color:var(--danger);margin-top:6px;}
+  .cleared-note{
+    margin-top:12px;padding:10px 12px;border:1px solid var(--success);border-radius:6px;
+    font-size:12px;color:var(--success);line-height:1.5;
+  }
+  .cleared-note b{display:block;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;}
+  .goal-badge{
+    margin-top:12px;padding:10px 12px;border:1px solid var(--accent);border-radius:6px;
+    font-family:var(--mono);font-size:13px;color:var(--accent);text-align:center;font-weight:600;
+  }
+
+  /* progress bar */
+  .bar-track{background:var(--surface-2);border-radius:4px;height:8px;overflow:hidden;margin:14px 0 4px;}
+  .bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .25s ease;}
+  .bar-fill.danger{background:var(--danger);}
+  .bar-fill.success{background:var(--success);}
+
+  /* notch belt (signature element) */
+  .belt{display:flex;gap:4px;margin:14px 0 2px;}
+  .notch{flex:1;height:16px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border);}
+  .notch.filled{background:var(--accent);border-color:var(--accent);}
+  .notch.filled.success{background:var(--success);border-color:var(--success);}
+  .belt-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text-faint);margin-top:6px;font-family:var(--mono);}
+
+  /* payday card */
+  .payday-card{
+    background:var(--surface);border:1px solid var(--accent-dim);border-radius:var(--radius);
+    padding:18px 16px;
+  }
+  .payday-grid{display:flex;justify-content:space-between;gap:12px;}
+  .payday-col{flex:1;min-width:0;}
+  .payday-label{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
+  .payday-val{font-family:var(--mono);font-size:20px;font-weight:600;margin-top:4px;color:var(--text);}
+  .payday-val.accent{color:var(--accent);}
+  .payday-today{
+    text-align:center;font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent);
+    padding:8px 0 2px;letter-spacing:0.05em;
+  }
+  .payday-steps{margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .payday-steps ol{margin:6px 0 0;padding-left:18px;font-size:12px;color:var(--text-dim);line-height:1.9;}
+  .notif-row{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
+  .notif-note{font-size:11px;color:var(--text-faint);line-height:1.5;}
+
+  /* streak card */
+  .streak-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .streak-main .streak-label{font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);}
+  .streak-main .streak-val{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--accent);margin-top:4px;}
+  .streak-best{text-align:right;}
+  .streak-best .streak-label{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-faint);}
+  .streak-best .streak-val{font-family:var(--mono);font-size:16px;color:var(--text-dim);margin-top:4px;}
+
+  /* spending card */
+  .spend-form{display:flex;gap:8px;margin-top:16px;}
+  .spend-form input{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:12px;font-family:var(--sans);font-size:14px;min-height:44px;
+  }
+  .spend-form input[type="number"]{width:110px;font-family:var(--mono);}
+  .spend-form input[type="text"]{flex:1;min-width:0;}
+  .btn-add{background:var(--accent);color:#0d0f0b;border-color:var(--accent);min-height:44px;padding:12px 18px;}
+  .btn-add:active{opacity:0.85;}
+
+  .expense-list{margin-top:14px;display:flex;flex-direction:column;gap:6px;}
+  .expense-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 4px;border-bottom:1px solid var(--border);
+  }
+  .expense-row:last-child{border-bottom:none;}
+  .expense-desc{font-size:13px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .expense-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .expense-amt{font-family:var(--mono);font-size:13px;color:var(--text);}
+  .expense-del{
+    background:none;border:none;color:var(--text-faint);font-size:18px;line-height:1;
+    padding:6px 8px;cursor:pointer;
+  }
+  .empty-note{font-size:12px;color:var(--text-faint);padding:8px 4px;}
+
+  /* summary */
+  .summary-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:6px 16px;
+  }
+  .summary-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 0;border-bottom:1px solid var(--border);
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-name{font-size:13px;color:var(--text-dim);}
+  .summary-amt{font-family:var(--mono);font-size:14px;color:var(--text);}
+  .summary-amt.accent{color:var(--accent);font-weight:600;}
+
+  /* history */
+  .history-list{display:flex;flex-direction:column;gap:10px;}
+  .history-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;
+  }
+  .history-card.incomplete{border-color:var(--danger);}
+  .history-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .history-title{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);}
+  .history-date{font-size:11px;color:var(--text-faint);}
+  .history-flag{font-size:10px;color:var(--danger);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+  .history-lines{margin-top:8px;font-size:12px;color:var(--text-dim);line-height:1.8;}
+
+  /* settings */
+  .settings-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px;display:flex;flex-direction:column;gap:12px;
+  }
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.06em;}
+  .field input, .field select{
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    border-radius:6px;padding:12px;font-family:var(--mono);font-size:14px;min-height:44px;width:100%;
+  }
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+  .checkbox-row{display:flex;align-items:center;gap:10px;}
+  .checkbox-row input{width:20px;height:20px;flex-shrink:0;}
+  .checkbox-row label{font-size:13px;color:var(--text-dim);}
+  .btn-save{background:var(--accent);color:#0d0f0b;border:none;font-weight:700;min-height:48px;border-radius:6px;font-size:13px;text-transform:uppercase;letter-spacing:0.04em;cursor:pointer;margin-top:4px;}
+  .save-confirm{font-size:11px;color:var(--success);text-align:center;min-height:14px;}
+
+  /* export/import */
+  .data-actions{display:flex;gap:10px;}
+  .data-actions .btn{flex:1;min-height:48px;}
+
+  /* footer actions */
+  .footer-actions{display:flex;flex-direction:column;gap:10px;margin-top:32px;}
+  .btn-cutoff{
+    background:var(--accent);color:#0d0f0b;border:none;font-weight:700;
+    padding:16px;border-radius:8px;font-size:14px;letter-spacing:0.04em;text-transform:uppercase;
+    min-height:52px;cursor:pointer;
+  }
+  .btn-cutoff:disabled{background:var(--surface-2);color:var(--text-faint);cursor:default;}
+  .btn-reset{
+    background:transparent;border:1px solid var(--border);color:var(--text-faint);
+    padding:12px;border-radius:8px;font-size:12px;min-height:44px;cursor:pointer;
+  }
+  .btn-reset:active{border-color:var(--danger);color:var(--danger);}
+
+  .divider{height:1px;background:var(--border);margin:28px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <h1>Discipline</h1>
+      <span class="cutoff-tag" id="cutoffTag">CUTOFF 1</span>
+    </div>
+    <div class="income-row">
+      <span class="income-amt" id="incomeAmt">₱12,000</span>
+      <span class="income-label">this cutoff</span>
+    </div>
+  </header>
+
+  <div class="section-label">Payday</div>
+  <div class="payday-card">
+    <div id="paydayTodayBlock" style="display:none;">
+      <div class="payday-today">PAYDAY TODAY</div>
+    </div>
+    <div class="payday-grid" id="paydayGrid">
+      <div class="payday-col">
+        <div class="payday-label">Next payday</div>
+        <div class="payday-val" id="paydayDate">—</div>
+      </div>
+      <div class="payday-col">
+        <div class="payday-label">Days left</div>
+        <div class="payday-val accent" id="paydayDays">—</div>
+      </div>
+      <div class="payday-col">
+        <div class="payday-label">Next cutoff</div>
+        <div class="payday-val" id="paydayCutoffLabel">—</div>
+      </div>
+    </div>
+    <div class="payday-steps">
+      <div class="payday-label">Payday order</div>
+      <ol id="paydaySteps"></ol>
+    </div>
+    <div class="notif-row">
+      <button class="btn btn-mark" id="notifBtn" style="width:100%;">Enable notifications</button>
+      <div class="notif-note" id="notifNote"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Discipline streak</div>
+  <div class="streak-card">
+    <div class="streak-main">
+      <div class="streak-label">Current streak</div>
+      <div class="streak-val" id="streakCurrent">🔥 0 cutoffs</div>
+    </div>
+    <div class="streak-best">
+      <div class="streak-label">Best streak</div>
+      <div class="streak-val" id="streakBest">0 cutoffs</div>
+    </div>
+  </div>
+
+  <div class="section-label">This cutoff checklist</div>
+  <div class="alloc-list" id="allocList"></div>
+
+  <div class="section-label">Available spending</div>
+  <div class="stat-card">
+    <div class="stat-top">
+      <div>
+        <div class="stat-title">Remaining this cutoff</div>
+        <div class="stat-note" id="spendNote">of ₱6,500 limit</div>
+      </div>
+    </div>
+    <div class="stat-amt" id="spendRemaining">₱6,500</div>
+    <div class="bar-track"><div class="bar-fill" id="spendBar" style="width:0%"></div></div>
+    <div class="over-budget" id="overBudgetNote" style="display:none;"></div>
+
+    <div class="spend-form">
+      <input type="text" id="expDesc" placeholder="What for?" maxlength="40">
+      <input type="number" id="expAmt" placeholder="₱0" inputmode="decimal">
+    </div>
+    <button class="btn btn-add" style="width:100%;margin-top:8px;" id="addExpenseBtn">Add expense</button>
+
+    <div class="expense-list" id="expenseList"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">SPayLater tracker</div>
+  <div class="stat-card">
+    <div class="stat-top">
+      <div>
+        <div class="stat-title">Balance remaining</div>
+        <div class="stat-note" id="debtNote">₱1,500 per cutoff</div>
+      </div>
+    </div>
+    <div class="stat-amt" id="debtAmt">₱12,000</div>
+    <div class="belt" id="debtBelt"></div>
+    <div class="belt-label"><span id="debtBeltLabel">0 of 8 payments made</span><span id="debtEta"></span></div>
+    <div class="cleared-note" id="debtClearedNote" style="display:none;">
+      <b>Debt cleared</b>
+      Your ₱3,000 monthly debt payment is now available for savings.
+    </div>
+  </div>
+
+  <div class="section-label">Savings tracker</div>
+  <div class="stat-card">
+    <div class="stat-top">
+      <div>
+        <div class="stat-title" id="savingsTitle">Saved toward goal</div>
+        <div class="stat-note" id="savingsNote">₱1,000 per cutoff · target ₱8,000</div>
+      </div>
+    </div>
+    <div class="stat-amt" id="savingsAmt">₱0</div>
+    <div id="savingsGoalArea"></div>
+    <div class="belt" id="savingsBelt"></div>
+    <div class="belt-label"><span id="savingsBeltLabel">0 of 8 cutoffs</span><span></span></div>
+  </div>
+
+  <div class="section-label">Current savings target</div>
+  <div class="stat-card">
+    <div class="stat-top">
+      <div>
+        <div class="stat-title">Per month</div>
+      </div>
+    </div>
+    <div class="stat-amt" id="savingsTargetAmt" style="font-size:26px;">₱2,000/month</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Monthly summary</div>
+  <div class="summary-card" id="summaryCard"></div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">History</div>
+  <div class="history-list" id="historyList"></div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Settings</div>
+  <div class="settings-card">
+    <div class="field">
+      <label>Income per cutoff</label>
+      <input type="number" id="setIncome" inputmode="decimal">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Rent + Wi-Fi</label>
+        <input type="number" id="setRent" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Mom</label>
+        <input type="number" id="setMom" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>SPayLater payment</label>
+        <input type="number" id="setSpaylaterPay" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Current debt balance</label>
+        <input type="number" id="setDebtBalance" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Savings before debt cleared</label>
+        <input type="number" id="setSavings1" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Savings after debt cleared</label>
+        <input type="number" id="setSavings2" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field">
+      <label>Spending limit per cutoff</label>
+      <input type="number" id="setSpendLimit" inputmode="decimal">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="setTwice">
+      <label for="setTwice">Paid twice per month</label>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>First cutoff day (1–31)</label>
+        <input type="number" id="setDay1" inputmode="numeric" min="1" max="31">
+      </div>
+      <div class="field">
+        <label>Second cutoff day (1–31)</label>
+        <input type="number" id="setDay2" inputmode="numeric" min="1" max="31">
+      </div>
+    </div>
+    <button class="btn-save" id="saveSettingsBtn">Save settings</button>
+    <div class="save-confirm" id="saveConfirm"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Backup</div>
+  <div class="data-actions">
+    <button class="btn" id="exportBtn">Export data</button>
+    <button class="btn" id="importBtn">Import data</button>
+  </div>
+  <input type="file" id="importFile" accept="application/json" style="display:none;">
+
+  <div class="footer-actions">
+    <button class="btn-cutoff" id="newCutoffBtn">Start next cutoff</button>
+    <button class="btn-reset" id="resetBtn">Reset all data</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY_V2 = 'discipline_state_v2';
+  const STORAGE_KEY_V1 = 'discipline_state_v1';
+
+  const DEFAULT_STATE = {
+    version: 2,
+    cutoffNumber: 1,
+    incomePerCutoff: 12000,
+    twicePerMonth: true,
+    cutoff1Day: 15,
+    cutoff2Day: 30,
+    allocations: { rent: 2000, mom: 1000, spaylater: 1500 },
+    spendingLimit: 6500,
+    paid: { rent: false, mom: false, spaylater: false, savings: false },
+    debtBalance: 12000,
+    debtTotal: 12000,
+    debtPaymentsMade: 0,
+    debtPaymentsTotal: 8,
+    savingsBalance: 0,
+    savingsTarget: 8000,
+    savingsPerCutoffPhase1: 1000,
+    savingsPerCutoffPhase2: 2500,
+    savingsCutoffsMade: 0,
+    savingsCutoffsTotal: 8,
+    spendingSpent: 0,
+    expenses: [],
+    streakCurrent: 0,
+    streakBest: 0,
+    history: [],
+    lastNotificationDate: null
+  };
+
+  function mergeDeep(target, source){
+    for(const key in source){
+      if(source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])
+         && target[key] && typeof target[key] === 'object' && !Array.isArray(target[key])){
+        mergeDeep(target[key], source[key]);
+      } else if(source[key] !== undefined){
+        target[key] = source[key];
+      }
+    }
+    return target;
+  }
+
+  function loadState(){
+    let parsed = null;
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY_V2);
+      if(raw){
+        parsed = JSON.parse(raw);
+      } else {
+        const rawV1 = localStorage.getItem(STORAGE_KEY_V1);
+        if(rawV1) parsed = JSON.parse(rawV1);
+      }
+    }catch(e){
+      parsed = null;
+    }
+    return mergeDeep(structuredClone(DEFAULT_STATE), parsed || {});
+  }
+
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
+  }
+
+  let state = loadState();
+
+  const peso = (n) => '₱' + Math.round(n).toLocaleString('en-US');
+
+  function debtCleared(){ return state.debtBalance <= 0; }
+
+  function currentSavingsPerCutoff(){
+    return debtCleared() ? state.savingsPerCutoffPhase2 : state.savingsPerCutoffPhase1;
+  }
+
+  function cutoffsPerMonth(){ return state.twicePerMonth ? 2 : 1; }
+
+  // ---------- PAYDAY MATH ----------
+  function daysInMonth(y,m){ return new Date(y, m+1, 0).getDate(); }
+
+  function buildDayDate(y,m,d){
+    const dim = daysInMonth(y,m);
+    const day = Math.min(Math.max(1,d), dim);
+    return new Date(y,m,day,0,0,0,0);
+  }
+
+  function computeNextPayday(now){
+    const day1 = Math.min(31, Math.max(1, state.cutoff1Day || 15));
+    const day2 = Math.min(31, Math.max(1, state.cutoff2Day || 30));
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const todayMid = new Date(year, month, now.getDate());
+
+    let nm = month + 1, ny = year;
+    if(nm > 11){ nm = 0; ny += 1; }
+
+    const opts = [];
+    opts.push({ d: buildDayDate(year, month, day1), c: 1 });
+    if(state.twicePerMonth) opts.push({ d: buildDayDate(year, month, day2), c: 2 });
+    opts.push({ d: buildDayDate(ny, nm, day1), c: 1 });
+    if(state.twicePerMonth) opts.push({ d: buildDayDate(ny, nm, day2), c: 2 });
+
+    opts.sort((a,b) => a.d - b.d);
+    for(const o of opts){
+      if(o.d.getTime() >= todayMid.getTime()) return o;
+    }
+    return opts[opts.length - 1];
+  }
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function formatDate(d){
+    return MONTH_NAMES[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+
+  // ---------- RENDER ----------
+  function render(){
+    document.getElementById('cutoffTag').textContent = 'CUTOFF ' + state.cutoffNumber;
+    document.getElementById('incomeAmt').textContent = peso(state.allocations.rent + state.allocations.mom + (debtCleared()?0:state.allocations.spaylater) + currentSavingsPerCutoff() + state.spendingLimit);
+
+    renderPayday();
+    renderStreak();
+    renderAllocations();
+    renderSpending();
+    renderDebt();
+    renderSavings();
+    renderSavingsTarget();
+    renderSummary();
+    renderHistory();
+    renderFooter();
+    saveState();
+  }
+
+  function renderPayday(){
+    const now = new Date();
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const next = computeNextPayday(now);
+    const diffDays = Math.round((next.d.getTime() - todayMid.getTime()) / 86400000);
+
+    const todayBlock = document.getElementById('paydayTodayBlock');
+    const grid = document.getElementById('paydayGrid');
+
+    if(diffDays <= 0){
+      todayBlock.style.display = '';
+    } else {
+      todayBlock.style.display = 'none';
+    }
+
+    document.getElementById('paydayDate').textContent = formatDate(next.d);
+    document.getElementById('paydayDays').textContent = diffDays <= 0 ? 'TODAY' : (diffDays + ' day' + (diffDays===1?'':'s'));
+    document.getElementById('paydayCutoffLabel').textContent = state.twicePerMonth ? ('CUTOFF ' + next.c) : 'CUTOFF';
+
+    const stepsEl = document.getElementById('paydaySteps');
+    const saveAmt = currentSavingsPerCutoff();
+    const steps = [
+      'Save ' + peso(saveAmt) + ' first',
+    ];
+    if(!debtCleared()) steps.push('Pay SPayLater ' + peso(state.allocations.spaylater));
+    steps.push('Send Mom ' + peso(state.allocations.mom));
+    steps.push('Pay Rent + Wi-Fi ' + peso(state.allocations.rent));
+    steps.push('Spend what\u2019s left');
+    stepsEl.innerHTML = steps.map(s => '<li>' + s + '</li>').join('');
+
+    tryNotify(diffDays, saveAmt);
+  }
+
+  function renderStreak(){
+    document.getElementById('streakCurrent').textContent = '🔥 ' + state.streakCurrent + (state.streakCurrent===1?' cutoff':' cutoffs');
+    document.getElementById('streakBest').textContent = state.streakBest + (state.streakBest===1?' cutoff':' cutoffs');
+  }
+
+  function allocCardHTML(key, name, sub, amount, doneKey, onMarkLabel){
+    const isDone = state.paid[doneKey];
+    return `
+    <div class="alloc-card ${isDone?'done':''}" data-key="${key}">
+      <div class="alloc-info">
+        <span class="alloc-name">${name}</span>
+        <span class="alloc-sub">${sub}</span>
+        <span class="alloc-amt">${peso(amount)}</span>
+      </div>
+      ${isDone
+        ? `<button class="btn btn-done" data-action="undo-${key}">✓ Done</button>`
+        : `<button class="btn btn-mark" data-action="mark-${key}">${onMarkLabel}</button>`}
+    </div>`;
+  }
+
+  function renderAllocations(){
+    let html = '';
+    const savingsAmt = currentSavingsPerCutoff();
+    html += allocCardHTML('savings','Savings','Set aside first', savingsAmt, 'savings', 'Add to savings');
+
+    if(!debtCleared()){
+      html += allocCardHTML('spaylater','SPayLater','Debt payment', state.allocations.spaylater, 'spaylater', 'Mark paid');
+    } else {
+      html += `
+      <div class="alloc-card done">
+        <div class="alloc-info">
+          <span class="alloc-name">SPayLater</span>
+          <span class="alloc-sub">Debt payment</span>
+        </div>
+        <span class="badge-cleared">Cleared 🎉</span>
+      </div>`;
+    }
+
+    html += allocCardHTML('mom','Send to Mom','Family support', state.allocations.mom, 'mom', 'Mark sent');
+    html += allocCardHTML('rent','Rent + Wi-Fi','Fixed monthly bill', state.allocations.rent, 'rent', 'Mark paid');
+
+    document.getElementById('allocList').innerHTML = html;
+  }
+
+  function renderSpending(){
+    const remaining = state.spendingLimit - state.spendingSpent;
+    const el = document.getElementById('spendRemaining');
+    el.textContent = peso(remaining);
+    el.classList.toggle('negative', remaining < 0);
+    document.getElementById('spendNote').textContent = `of ${peso(state.spendingLimit)} limit · spent ${peso(state.spendingSpent)}`;
+
+    const pct = Math.min(100, Math.max(0,(state.spendingSpent/state.spendingLimit)*100));
+    const bar = document.getElementById('spendBar');
+    bar.style.width = pct + '%';
+    bar.classList.toggle('danger', remaining < 0);
+
+    const overNote = document.getElementById('overBudgetNote');
+    if(remaining < 0){
+      overNote.style.display = '';
+      overNote.textContent = 'OVER BUDGET BY ' + peso(Math.abs(remaining));
+    } else {
+      overNote.style.display = 'none';
+    }
+
+    const list = document.getElementById('expenseList');
+    if(state.expenses.length === 0){
+      list.innerHTML = `<div class="empty-note">No expenses logged yet this cutoff.</div>`;
+    } else {
+      list.innerHTML = state.expenses.slice().reverse().map(e => `
+        <div class="expense-row" data-id="${e.id}">
+          <span class="expense-desc">${escapeHTML(e.desc || 'Expense')}</span>
+          <span class="expense-right">
+            <span class="expense-amt">${peso(e.amount)}</span>
+            <button class="expense-del" data-action="del-expense" data-id="${e.id}">×</button>
+          </span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function renderDebt(){
+    document.getElementById('debtAmt').textContent = peso(Math.max(0,state.debtBalance));
+    document.getElementById('debtNote').textContent = debtCleared()
+      ? 'Fully paid off'
+      : `${peso(state.allocations.spaylater)} per cutoff`;
+
+    const belt = document.getElementById('debtBelt');
+    let notches = '';
+    for(let i=0;i<state.debtPaymentsTotal;i++){
+      notches += `<div class="notch ${i < state.debtPaymentsMade ? 'filled' : ''}"></div>`;
+    }
+    belt.innerHTML = notches;
+    document.getElementById('debtBeltLabel').textContent = `${state.debtPaymentsMade} of ${state.debtPaymentsTotal} payments made`;
+
+    const remainingPayments = Math.max(0, state.debtPaymentsTotal - state.debtPaymentsMade);
+    const monthsLeft = Math.ceil(remainingPayments/2);
+    document.getElementById('debtEta').textContent = debtCleared() ? '' : `~${monthsLeft} mo left`;
+
+    document.getElementById('debtClearedNote').style.display = debtCleared() ? '' : 'none';
+  }
+
+  function renderSavings(){
+    document.getElementById('savingsAmt').textContent = peso(state.savingsBalance);
+    const belt = document.getElementById('savingsBelt');
+    const goalArea = document.getElementById('savingsGoalArea');
+
+    if(state.savingsBalance >= state.savingsTarget){
+      goalArea.innerHTML = `<div class="goal-badge">4-MONTH EMERGENCY BUFFER<br>${peso(state.savingsTarget)} ✓</div>`;
+    } else {
+      const pct = Math.min(100, Math.max(0,(state.savingsBalance/state.savingsTarget)*100));
+      goalArea.innerHTML = `
+        <div class="bar-track"><div class="bar-fill success" style="width:${pct}%"></div></div>
+        <div class="belt-label"><span>SAVED ${peso(state.savingsBalance)} / ${peso(state.savingsTarget)}</span><span></span></div>`;
+    }
+
+    if(!debtCleared()){
+      document.getElementById('savingsTitle').textContent = 'Saved toward goal';
+      document.getElementById('savingsNote').textContent = `${peso(state.savingsPerCutoffPhase1)} per cutoff · target ${peso(state.savingsTarget)}`;
+      let notches = '';
+      for(let i=0;i<state.savingsCutoffsTotal;i++){
+        notches += `<div class="notch ${i < state.savingsCutoffsMade ? 'filled success' : ''}"></div>`;
+      }
+      belt.innerHTML = notches;
+      document.getElementById('savingsBeltLabel').textContent = `${state.savingsCutoffsMade} of ${state.savingsCutoffsTotal} cutoffs`;
+    } else {
+      document.getElementById('savingsTitle').textContent = 'Total saved';
+      document.getElementById('savingsNote').textContent = `Debt cleared — ${peso(state.savingsPerCutoffPhase2)} per cutoff (₱${(state.savingsPerCutoffPhase2*2).toLocaleString('en-US')}/mo)`;
+      belt.innerHTML = `<div class="notch filled success" style="flex:1;"></div>`;
+      document.getElementById('savingsBeltLabel').textContent = 'Open-ended — no fixed target';
+    }
+  }
+
+  function renderSavingsTarget(){
+    const perMonth = currentSavingsPerCutoff() * cutoffsPerMonth();
+    document.getElementById('savingsTargetAmt').textContent = peso(perMonth) + '/month';
+  }
+
+  function renderSummary(){
+    const cpm = cutoffsPerMonth();
+    const monthlyIncome = state.incomePerCutoff * cpm;
+    const monthlyRent = state.allocations.rent * cpm;
+    const monthlyMom = state.allocations.mom * cpm;
+    const monthlySpaylater = debtCleared() ? 0 : state.allocations.spaylater * cpm;
+    const monthlySavings = currentSavingsPerCutoff() * cpm;
+    const monthlySpending = state.spendingLimit * cpm;
+
+    const rows = [
+      ['Monthly income', monthlyIncome, true],
+      ['Rent + Wi-Fi', monthlyRent, false],
+      ['Mom', monthlyMom, false],
+      ['SPayLater', monthlySpaylater, false],
+      ['Savings', monthlySavings, false],
+      ['Available spending', monthlySpending, true],
+    ];
+
+    document.getElementById('summaryCard').innerHTML = rows.map(r => `
+      <div class="summary-row">
+        <span class="summary-name">${r[0]}</span>
+        <span class="summary-amt ${r[2] ? 'accent' : ''}">${peso(r[1])}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderHistory(){
+    const el = document.getElementById('historyList');
+    if(state.history.length === 0){
+      el.innerHTML = `<div class="empty-note">No completed cutoffs yet.</div>`;
+      return;
+    }
+    el.innerHTML = state.history.map(h => `
+      <div class="history-card ${h.complete ? '' : 'incomplete'}">
+        <div class="history-top">
+          <span class="history-title">CUTOFF ${h.cutoffNumber}</span>
+          <span class="history-date">${h.date}</span>
+        </div>
+        ${h.complete ? '' : '<div class="history-flag">Incomplete allocations</div>'}
+        <div class="history-lines">
+          Saved ${peso(h.saved)}<br>
+          SPayLater ${peso(h.spaylater)}<br>
+          Mom ${peso(h.mom)}<br>
+          Rent/Wi-Fi ${peso(h.rent)}<br>
+          Spent ${peso(h.spent)}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderFooter(){
+    const spaylaterOk = debtCleared() || state.paid.spaylater;
+    const allDone = state.paid.rent && state.paid.mom && state.paid.savings && spaylaterOk;
+    const btn = document.getElementById('newCutoffBtn');
+    btn.textContent = allDone ? 'Start next cutoff' : 'Start next cutoff (allocations pending)';
+  }
+
+  function escapeHTML(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---------- ACTIONS ----------
+  function markRent(){ if(state.paid.rent) return; state.paid.rent = true; render(); }
+  function undoRent(){ if(!state.paid.rent) return; state.paid.rent = false; render(); }
+  function markMom(){ if(state.paid.mom) return; state.paid.mom = true; render(); }
+  function undoMom(){ if(!state.paid.mom) return; state.paid.mom = false; render(); }
+
+  function markSpaylater(){
+    if(state.paid.spaylater || debtCleared()) return;
+    state.paid.spaylater = true;
+    state.debtBalance = Math.max(0, state.debtBalance - state.allocations.spaylater);
+    state.debtPaymentsMade = Math.min(state.debtPaymentsTotal, state.debtPaymentsMade + 1);
+    render();
+  }
+  function undoSpaylater(){
+    if(!state.paid.spaylater) return;
+    state.paid.spaylater = false;
+    state.debtBalance = Math.min(state.debtTotal, state.debtBalance + state.allocations.spaylater);
+    state.debtPaymentsMade = Math.max(0, state.debtPaymentsMade - 1);
+    render();
+  }
+
+  function markSavings(){
+    if(state.paid.savings) return;
+    const amt = currentSavingsPerCutoff();
+    state.paid.savings = true;
+    state.savingsBalance += amt;
+    if(state.savingsCutoffsMade < state.savingsCutoffsTotal && !debtCleared()){
+      state.savingsCutoffsMade += 1;
+    }
+    render();
+  }
+  function undoSavings(){
+    if(!state.paid.savings) return;
+    const amt = currentSavingsPerCutoff();
+    state.paid.savings = false;
+    state.savingsBalance = Math.max(0, state.savingsBalance - amt);
+    if(state.savingsCutoffsMade > 0 && !debtCleared()){
+      state.savingsCutoffsMade -= 1;
+    }
+    render();
+  }
+
+  function addExpense(){
+    const descInput = document.getElementById('expDesc');
+    const amtInput = document.getElementById('expAmt');
+    const amount = parseFloat(amtInput.value);
+    if(!amount || amount <= 0){
+      amtInput.focus();
+      return;
+    }
+    state.expenses.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      desc: descInput.value.trim(),
+      amount: amount
+    });
+    state.spendingSpent += amount;
+    descInput.value = '';
+    amtInput.value = '';
+    render();
+  }
+
+  function deleteExpense(id){
+    const idx = state.expenses.findIndex(e => e.id === id);
+    if(idx === -1) return;
+    state.spendingSpent -= state.expenses[idx].amount;
+    state.expenses.splice(idx,1);
+    render();
+  }
+
+  function startNewCutoff(){
+    const spaylaterOk = debtCleared() || state.paid.spaylater;
+    const allDone = state.paid.rent && state.paid.mom && state.paid.savings && spaylaterOk;
+
+    if(!allDone){
+      const proceed = confirm('Some allocations are incomplete.\nStart the next cutoff anyway?');
+      if(!proceed) return;
+    }
+
+    state.history.unshift({
+      cutoffNumber: state.cutoffNumber,
+      date: formatDate(new Date()),
+      saved: state.paid.savings ? currentSavingsPerCutoff() : 0,
+      spaylater: state.paid.spaylater ? state.allocations.spaylater : 0,
+      mom: state.paid.mom ? state.allocations.mom : 0,
+      rent: state.paid.rent ? state.allocations.rent : 0,
+      spent: state.spendingSpent,
+      complete: allDone
+    });
+
+    if(allDone){
+      state.streakCurrent += 1;
+      state.streakBest = Math.max(state.streakBest, state.streakCurrent);
+    } else {
+      state.streakCurrent = 0;
+    }
+
+    state.cutoffNumber += 1;
+    state.paid = { rent:false, mom:false, spaylater:false, savings:false };
+    state.spendingSpent = 0;
+    state.expenses = [];
+    render();
+  }
+
+  function resetAll(){
+    const msg = 'Reset ALL Discipline data?\nThis will delete:\n- savings progress\n- debt progress\n- spending history\n- cutoff history\n- payday settings\n\nThis cannot be undone.';
+    if(!confirm(msg)) return;
+    state = structuredClone(DEFAULT_STATE);
+    render();
+    populateSettingsForm();
+  }
+
+  // ---------- NOTIFICATIONS ----------
+  function notifSupported(){
+    return typeof window !== 'undefined' && 'Notification' in window;
+  }
+
+  function updateNotifUI(){
+    const btn = document.getElementById('notifBtn');
+    const note = document.getElementById('notifNote');
+    if(!notifSupported()){
+      btn.style.display = 'none';
+      note.textContent = "Browser notifications aren't available. You can still use the payday countdown.";
+      return;
+    }
+    if(Notification.permission === 'granted'){
+      btn.style.display = 'none';
+      note.textContent = 'Notifications enabled. You\u2019ll get a reminder on payday.';
+    } else if(Notification.permission === 'denied'){
+      btn.style.display = 'none';
+      note.textContent = "Browser notifications aren't available. You can still use the payday countdown.";
+    } else {
+      btn.style.display = '';
+      note.textContent = 'Get a one-time reminder on payday.';
+    }
+  }
+
+  function requestNotifPermission(){
+    if(!notifSupported()){
+      updateNotifUI();
+      return;
+    }
+    try{
+      Notification.requestPermission().then(function(){
+        updateNotifUI();
+      }).catch(function(){
+        updateNotifUI();
+      });
+    }catch(e){
+      updateNotifUI();
+    }
+  }
+
+  function tryNotify(diffDays, saveAmt){
+    if(!notifSupported()) return;
+    if(Notification.permission !== 'granted') return;
+    if(diffDays > 0) return;
+
+    const todayStr = new Date().toISOString().slice(0,10);
+    if(state.lastNotificationDate === todayStr) return;
+
+    let body = 'Payday today. Save ' + peso(saveAmt) + ' first.';
+    const parts = [];
+    if(!debtCleared()) parts.push('SPayLater ' + peso(state.allocations.spaylater));
+    parts.push('Mom ' + peso(state.allocations.mom));
+    parts.push('Rent/Wi-Fi ' + peso(state.allocations.rent));
+    body += ' Then: ' + parts.join(', ') + '.';
+
+    try{
+      new Notification('Discipline', { body: body });
+    }catch(e){ /* ignore */ }
+
+    state.lastNotificationDate = todayStr;
+    saveState();
+  }
+
+  // ---------- SETTINGS ----------
+  function populateSettingsForm(){
+    document.getElementById('setIncome').value = state.incomePerCutoff;
+    document.getElementById('setRent').value = state.allocations.rent;
+    document.getElementById('setMom').value = state.allocations.mom;
+    document.getElementById('setSpaylaterPay').value = state.allocations.spaylater;
+    document.getElementById('setDebtBalance').value = state.debtBalance;
+    document.getElementById('setSavings1').value = state.savingsPerCutoffPhase1;
+    document.getElementById('setSavings2').value = state.savingsPerCutoffPhase2;
+    document.getElementById('setSpendLimit').value = state.spendingLimit;
+    document.getElementById('setTwice').checked = !!state.twicePerMonth;
+    document.getElementById('setDay1').value = state.cutoff1Day;
+    document.getElementById('setDay2').value = state.cutoff2Day;
+  }
+
+  function saveSettings(){
+    function num(id, fallback){
+      const v = parseFloat(document.getElementById(id).value);
+      return isNaN(v) ? fallback : v;
+    }
+    state.incomePerCutoff = num('setIncome', state.incomePerCutoff);
+    state.allocations.rent = num('setRent', state.allocations.rent);
+    state.allocations.mom = num('setMom', state.allocations.mom);
+    state.allocations.spaylater = num('setSpaylaterPay', state.allocations.spaylater);
+    state.debtBalance = Math.max(0, num('setDebtBalance', state.debtBalance));
+    state.savingsPerCutoffPhase1 = num('setSavings1', state.savingsPerCutoffPhase1);
+    state.savingsPerCutoffPhase2 = num('setSavings2', state.savingsPerCutoffPhase2);
+    state.spendingLimit = num('setSpendLimit', state.spendingLimit);
+    state.twicePerMonth = document.getElementById('setTwice').checked;
+    state.cutoff1Day = Math.min(31, Math.max(1, Math.round(num('setDay1', state.cutoff1Day))));
+    state.cutoff2Day = Math.min(31, Math.max(1, Math.round(num('setDay2', state.cutoff2Day))));
+
+    render();
+    const confirmEl = document.getElementById('saveConfirm');
+    confirmEl.textContent = 'Settings saved.';
+    setTimeout(function(){ confirmEl.textContent = ''; }, 2000);
+  }
+
+  // ---------- EXPORT / IMPORT ----------
+  function exportData(){
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'discipline-backup-' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(file){
+    const reader = new FileReader();
+    reader.onload = function(){
+      try{
+        const parsed = JSON.parse(reader.result);
+        state = mergeDeep(structuredClone(DEFAULT_STATE), parsed || {});
+        saveState();
+        render();
+        populateSettingsForm();
+        alert('Backup imported successfully.');
+      }catch(e){
+        alert('Could not import this file. Make sure it is a valid Discipline backup.');
+      }
+    };
+    reader.onerror = function(){
+      alert('Could not read this file.');
+    };
+    reader.readAsText(file);
+  }
+
+  // ---------- EVENTS ----------
+  document.getElementById('allocList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const action = btn.dataset.action;
+    if(action === 'mark-rent') markRent();
+    else if(action === 'undo-rent') undoRent();
+    else if(action === 'mark-mom') markMom();
+    else if(action === 'undo-mom') undoMom();
+    else if(action === 'mark-spaylater') markSpaylater();
+    else if(action === 'undo-spaylater') undoSpaylater();
+    else if(action === 'mark-savings') markSavings();
+    else if(action === 'undo-savings') undoSavings();
+  });
+
+  document.getElementById('addExpenseBtn').addEventListener('click', addExpense);
+  document.getElementById('expAmt').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') addExpense();
+  });
+
+  document.getElementById('expenseList').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-action="del-expense"]');
+    if(!btn) return;
+    deleteExpense(btn.dataset.id);
+  });
+
+  document.getElementById('newCutoffBtn').addEventListener('click', startNewCutoff);
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+  document.getElementById('notifBtn').addEventListener('click', requestNotifPermission);
+
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+
+  document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importBtn').addEventListener('click', function(){
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', function(e){
+    const file = e.target.files && e.target.files[0];
+    if(file) importData(file);
+    e.target.value = '';
+  });
+
+  // ---------- INIT ----------
+  populateSettingsForm();
+  updateNotifUI();
+  render();
+
+})();
+</script>
+<script>
+  // Registers the offline service worker. Safe no-op if unsupported.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {
+        // Offline caching just won't be available; the app still works normally.
+      });
+    });
+  }
+</script>
+</body>
+</html>
